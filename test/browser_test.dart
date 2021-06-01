@@ -10,7 +10,7 @@ bool _dummyCoverage() => true;
 void main() {
   group('Browser Test', () {
     test('should support importing dart:html', () {
-      var elem = new DivElement();
+      var elem = DivElement();
       expect(elem is DivElement, isTrue);
     });
 

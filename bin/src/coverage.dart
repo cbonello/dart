@@ -20,19 +20,20 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 
 import 'env.dart';
-import 'test.dart' show Test, BrowserTest, VmTest;
-
+import 'test.dart' show Test, BrowserTest;
 
 int _coverageCount = 0;
 const int _defaultObservatoryPort = 8444;
 const String tempCoverageDirPath = '__temp_coverage';
-Directory coverageDir = new Directory('coverage');
+Directory coverageDir = Directory('coverage');
 
 class Coverage {
   static Future<Coverage> merge(List<Coverage> coverages) async {
-    if (coverages.length == 0) throw new ArgumentError('Cannot merge an empty list of coverages.');
-    Logger log = new Logger('dcg');
-    Coverage merged = new Coverage(null);
+    if (coverages.length == 0) {
+      throw ArgumentError('Cannot merge an empty list of coverages.');
+    }
+    Logger log = Logger('dcg');
+    Coverage merged = Coverage(null);
     merged._tempCoverageDir = coverageDir;
 
     for (int i = 0; i < coverages.length; i++) {
@@ -46,27 +47,32 @@ class Coverage {
     return merged;
   }
 
-  Test test;
-  File lcovOutput;
-  File coverageFile;
-  Directory _tempCoverageDir;
+  Test? test;
+  late File lcovOutput;
+  late File coverageFile;
+  Directory? _tempCoverageDir;
   Coverage(this.test) {
     _coverageCount++;
   }
 
   Future<bool> collect() async {
-    Logger log = new Logger('dcg');
-    bool testSuccess = await test.run();
+    Logger log = Logger('dcg');
+    bool testSuccess = await test!.run();
     if (!testSuccess) {
       try {
-        log.info(await test.process.stderr.transform(utf8.decoder).join(''));
-      } catch(e) {}
+        log.info(await test!.process.stderr.transform(utf8.decoder).join(''));
+      } catch (e) {}
       log.severe('Testing failed.');
-      test.kill();
+      test!.kill();
       return false;
     }
-    int port = test is BrowserTest ? (test as BrowserTest).observatoryPort : _defaultObservatoryPort;
-    Directory _tempCoverageDir = new Directory('${coverageDir.path}/${_coverageCount}');
+
+    int port = test is BrowserTest
+        ? (test as BrowserTest).observatoryPort
+        : _defaultObservatoryPort;
+
+    Directory _tempCoverageDir =
+        Directory('${coverageDir.path}/${_coverageCount}');
     await _tempCoverageDir.create(recursive: true);
 
     log.info('Collecting coverage...');
@@ -78,10 +84,10 @@ class Coverage {
     ]);
     log.info('Coverage collected');
 
-    test.kill();
+    test!.kill();
     log.info(pr.stdout);
 
-    Directory testDir = new Directory('${_tempCoverageDir.path}/test');
+    Directory testDir = Directory('${_tempCoverageDir.path}/test');
     List<FileSystemEntity> entities = testDir.listSync();
     if (entities.length == 1 && entities[0] is File) {
       coverageFile = entities[0] as File;
@@ -98,23 +104,21 @@ class Coverage {
   }
 
   Future<bool> format() async {
-    Logger log = new Logger('dcg');
+    Logger log = Logger('dcg');
     log.info('Formatting coverage...');
-    lcovOutput = new File('${_tempCoverageDir.path}/coverage.lcov');
+    lcovOutput = File('${_tempCoverageDir!.path}/coverage.lcov');
     List<String> args = [
       'run',
       'coverage:format_coverage',
       '--lcov',
       '--packages=.packages',
       '-i',
-      _tempCoverageDir.path,
+      _tempCoverageDir!.path,
       '-o',
       lcovOutput.path,
     ];
 
-    if (env.reportOn != null) {
-      args.addAll(env.reportOn.map((r) => '--report-on=$r'));
-    }
+    args.addAll(env.reportOn.map((r) => '--report-on=$r'));
     if (env.verbose) {
       args.add('--verbose');
     }
@@ -132,9 +136,12 @@ class Coverage {
   }
 
   Future<bool> generateHtml() async {
-    Logger log = new Logger('dcg');
+    Logger log = Logger('dcg');
     log.info('Generating HTML...');
-    ProcessResult pr = await Process.run('genhtml', ['-o', 'coverage_report', lcovOutput.path]);
+    ProcessResult pr = await Process.run(
+      'genhtml',
+      <String>['-o', 'coverage_report', lcovOutput.path],
+    );
 
     log.info(pr.stdout);
     if (pr.exitCode == 0) {
@@ -149,10 +156,10 @@ class Coverage {
 
   void cleanUp({recursive: false}) {
     if (test != null) {
-      test.cleanUp();
+      test!.cleanUp();
     }
     if (_tempCoverageDir != null) {
-      _tempCoverageDir.deleteSync(recursive: recursive);
+      _tempCoverageDir!.deleteSync(recursive: recursive);
     }
   }
 }

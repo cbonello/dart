@@ -14,7 +14,7 @@ library codecov.bin.src.env;
 
 import 'package:args/args.dart';
 
-Env env;
+late Env env;
 
 class Env {
   List<String> filePaths;
@@ -22,16 +22,26 @@ class Env {
   bool lcov;
   List<String> reportOn;
   bool verbose;
+
   Env(this.filePaths, this.reportOn, this.html, this.lcov, this.verbose);
 }
 
 void setupEnv(List<String> args) {
-  var parser = new ArgParser();
-  parser.addOption('report-on', abbr: 'r', allowMultiple: true);
+  final parser = ArgParser();
+  parser.addOption('report-on', abbr: 'r');
   parser.addFlag('html', defaultsTo: true);
   parser.addFlag('lcov', defaultsTo: true);
   parser.addFlag('verbose', abbr: 'v');
-  var results = parser.parse(args);
-  List<String> filePaths = results.rest.length > 0 ? results.rest : ['test'];
-  env = new Env(filePaths, results['report-on'], results['html'], results['lcov'], results['verbose']);
+
+  final results = parser.parse(args);
+  List<String> filePaths =
+      results.rest.length > 0 ? results.rest : <String>['test'];
+
+  env = Env(
+    filePaths,
+    results['report-on'] ?? <String>[],
+    results['html'],
+    results['lcov'],
+    results['verbose'] ?? false,
+  );
 }
