@@ -29,17 +29,17 @@ Directory coverageDir = Directory('coverage');
 
 class Coverage {
   static Future<Coverage> merge(List<Coverage> coverages) async {
-    if (coverages.length == 0) {
+    if (coverages.isEmpty) {
       throw ArgumentError('Cannot merge an empty list of coverages.');
     }
-    Logger log = Logger('dcg');
-    Coverage merged = Coverage(null);
+    final Logger log = Logger('dcg');
+    final Coverage merged = Coverage(null);
     merged._tempCoverageDir = coverageDir;
 
     for (int i = 0; i < coverages.length; i++) {
       if (await coverages[i].coverageFile.exists()) {
-        File coverageFile = coverages[i].coverageFile;
-        String base = path.basename(coverageFile.path);
+        final File coverageFile = coverages[i].coverageFile;
+        final String base = path.basename(coverageFile.path);
         coverageFile.rename('${coverageDir.path}/$i-$base');
       }
     }
@@ -56,39 +56,39 @@ class Coverage {
   }
 
   Future<bool> collect() async {
-    Logger log = Logger('dcg');
-    bool testSuccess = await test!.run();
+    final Logger log = Logger('dcg');
+    final bool testSuccess = await test!.run();
     if (!testSuccess) {
       try {
-        log.info(await test!.process.stderr.transform(utf8.decoder).join(''));
-      } catch (e) {}
+        log.info(test!.process.stderr.transform(utf8.decoder));
+      } catch (_) {}
       log.severe('Testing failed.');
       test!.kill();
       return false;
     }
 
-    int port = test is BrowserTest
-        ? (test as BrowserTest).observatoryPort
+    final int port = test! is BrowserTest
+        ? (test! as BrowserTest).observatoryPort
         : _defaultObservatoryPort;
 
-    Directory _tempCoverageDir =
-        Directory('${coverageDir.path}/${_coverageCount}');
+    final Directory _tempCoverageDir =
+        Directory('${coverageDir.path}/$_coverageCount');
     await _tempCoverageDir.create(recursive: true);
 
     log.info('Collecting coverage...');
-    ProcessResult pr = await Process.run('pub', [
+    final ProcessResult pr = await Process.run('pub', [
       'run',
       'test',
       '--coverage',
-      '${_tempCoverageDir.path}',
+      _tempCoverageDir.path,
     ]);
     log.info('Coverage collected');
 
     test!.kill();
     log.info(pr.stdout);
 
-    Directory testDir = Directory('${_tempCoverageDir.path}/test');
-    List<FileSystemEntity> entities = testDir.listSync();
+    final Directory testDir = Directory('${_tempCoverageDir.path}/test');
+    final List<FileSystemEntity> entities = testDir.listSync();
     if (entities.length == 1 && entities[0] is File) {
       coverageFile = entities[0] as File;
     }
@@ -104,10 +104,10 @@ class Coverage {
   }
 
   Future<bool> format() async {
-    Logger log = Logger('dcg');
+    final Logger log = Logger('dcg');
     log.info('Formatting coverage...');
     lcovOutput = File('${_tempCoverageDir!.path}/coverage.lcov');
-    List<String> args = [
+    final List<String> args = [
       'run',
       'coverage:format_coverage',
       '--lcov',
@@ -122,7 +122,7 @@ class Coverage {
     if (env.verbose) {
       args.add('--verbose');
     }
-    ProcessResult pr = await Process.run('pub', args);
+    final ProcessResult pr = await Process.run('pub', args);
 
     log.info(pr.stdout);
     if (pr.exitCode == 0) {
@@ -136,9 +136,9 @@ class Coverage {
   }
 
   Future<bool> generateHtml() async {
-    Logger log = Logger('dcg');
+    final Logger log = Logger('dcg');
     log.info('Generating HTML...');
-    ProcessResult pr = await Process.run(
+    final ProcessResult pr = await Process.run(
       'genhtml',
       <String>['-o', 'coverage_report', lcovOutput.path],
     );
@@ -154,7 +154,7 @@ class Coverage {
     }
   }
 
-  void cleanUp({recursive: false}) {
+  void cleanUp({bool recursive = false}) {
     if (test != null) {
       test!.cleanUp();
     }

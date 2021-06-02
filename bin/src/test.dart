@@ -53,8 +53,9 @@ class BrowserTest extends Test {
   File? _tempHtmlTestFile;
   BrowserTest(String filePath) : super(filePath);
 
+  @override
   Future<bool> run() async {
-    Logger log = Logger('dcg');
+    final Logger log = Logger('dcg');
     if (dartTestFile.path.endsWith('.html')) {
       htmlTestFile = dartTestFile;
     } else if (dartTestFile.path.endsWith('.dart')) {
@@ -79,10 +80,10 @@ class BrowserTest extends Test {
     });
 
     bool observatoryFailed = false;
-    Completer<bool> c = Completer();
+    final Completer<bool> c = Completer();
     process.stdout
         .transform(utf8.decoder)
-        .transform(LineSplitter())
+        .transform(const LineSplitter())
         .listen((String line) {
       log.info(line);
       if (_observatoryPortPattern.hasMatch(line)) {
@@ -99,7 +100,7 @@ class BrowserTest extends Test {
     });
     process.stderr
         .transform(utf8.decoder)
-        .transform(LineSplitter())
+        .transform(const LineSplitter())
         .listen((String line) {
       log.info(line);
       if (line.contains(_testsPassedPattern)) {
@@ -114,10 +115,12 @@ class BrowserTest extends Test {
     return c.future;
   }
 
+  @override
   void kill() {
     process.kill();
   }
 
+  @override
   void cleanUp() {
     if (_tempHtmlTestFile != null) {
       _tempHtmlTestFile!.deleteSync();
@@ -125,9 +128,9 @@ class BrowserTest extends Test {
   }
 
   File generateHtmlTestFile() {
-    File html = File('${dartTestFile.path}.temp_html_test.html');
+    final File html = File('${dartTestFile.path}.temp_html_test.html');
     html.createSync();
-    String testPath = Uri.parse(dartTestFile.path).pathSegments.last;
+    final String testPath = Uri.parse(dartTestFile.path).pathSegments.last;
     html.writeAsStringSync(
         '<script type="application/dart" src="$testPath"></script>');
     return html;
@@ -137,8 +140,9 @@ class BrowserTest extends Test {
 class VMTest extends Test {
   VMTest(String filePath) : super(filePath);
 
+  @override
   Future<bool> run() async {
-    Logger log = Logger('dcg');
+    final Logger log = Logger('dcg');
     log.info('Running tests in Dart VM...');
     process = await Process.start(
       'dart',
@@ -150,8 +154,9 @@ class VMTest extends Test {
     );
 
     bool observatoryFailed = false;
-    await for (String line
-        in process.stdout.transform(utf8.decoder).transform(LineSplitter())) {
+    await for (final String line in process.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())) {
       log.info(line);
       if (line.contains(_observatoryFailPattern)) {
         observatoryFailed = true;
@@ -173,19 +178,20 @@ class VMTest extends Test {
     return false;
   }
 
-  Future<Null> kill() async {
+  @override
+  Future<void> kill() async {
     process.kill();
   }
 }
 
 Future<int> getPidOfPort(int port) async {
-  ProcessResult pr = await Process.run('lsof', ['-i', ':$port', '-t']);
+  final ProcessResult pr = await Process.run('lsof', ['-i', ':$port', '-t']);
   return int.parse((pr.stdout as String).replaceAll('\n', ''));
 }
 
 /// Taken from test_runner.dart and modified slightly.
 Future<bool> isDartFileBrowserOnly(String dartFilePath) async {
-  ProcessResult pr = await Process.run(
+  final ProcessResult pr = await Process.run(
     'dart2js',
     <String>[
       '--analyze-only',

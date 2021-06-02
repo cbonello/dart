@@ -1,5 +1,5 @@
 library codecov.test.not_a_test_file;
 
 void main() {
-  throw new Exception('Only test files ending in _test.dart should be run.');
+  throw Exception('Only test files ending in _test.dart should be run.');
 }

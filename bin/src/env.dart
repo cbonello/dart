@@ -18,11 +18,12 @@ late Env env;
 
 class Env {
   List<String> filePaths;
+  List<String> reportOn;
   bool html;
   bool lcov;
-  List<String> reportOn;
   bool verbose;
 
+  // ignore: avoid_positional_boolean_parameters
   Env(this.filePaths, this.reportOn, this.html, this.lcov, this.verbose);
 }
 
@@ -33,15 +34,15 @@ void setupEnv(List<String> args) {
   parser.addFlag('lcov', defaultsTo: true);
   parser.addFlag('verbose', abbr: 'v');
 
-  final results = parser.parse(args);
-  List<String> filePaths =
-      results.rest.length > 0 ? results.rest : <String>['test'];
+  final ArgResults results = parser.parse(args);
+  final List<String> filePaths =
+      results.rest.isNotEmpty ? results.rest : <String>['test'];
 
   env = Env(
     filePaths,
-    results['report-on'] ?? <String>[],
-    results['html'],
-    results['lcov'],
-    results['verbose'] ?? false,
+    results['report-on'] as List<String>,
+    results['html'] as bool,
+    results['lcov'] as bool,
+    results['verbose'] as bool,
   );
 }

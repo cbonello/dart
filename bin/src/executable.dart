@@ -22,7 +22,7 @@ import 'test.dart';
 
 const String _testFilePattern = '_test.dart';
 
-void print_log(LogRecord record) {
+void printLog(LogRecord record) {
   if (env.verbose || record.level >= Level.SEVERE) {
     print(record.message);
     if (record.error != null) {
@@ -34,14 +34,14 @@ void print_log(LogRecord record) {
   }
 }
 
-main(List<String> args) async {
+Future<void> main(List<String> args) async {
   setupEnv(args);
 
   bool htmlSuccess = false;
   bool lcovSuccess = false;
 
-  Logger log = Logger('dcg');
-  log.onRecord.listen(print_log);
+  final Logger log = Logger('dcg');
+  log.onRecord.listen(printLog);
   log.shout('Generating coverage...');
 
   log.info('Environment:');
@@ -55,27 +55,27 @@ main(List<String> args) async {
     exit(1);
   }
 
-  if (env.filePaths.length <= 0) {
+  if (env.filePaths.isEmpty) {
     log.severe('No test file given. Please specify at least one test file.');
     exit(1);
   }
 
-  List<String> testFiles = [];
+  final List<String> testFiles = [];
 
   env.filePaths.forEach(
     (String filePath) {
       if (FileSystemEntity.isDirectorySync(filePath)) {
-        List<FileSystemEntity> children =
+        final List<FileSystemEntity> children =
             Directory(filePath).listSync(recursive: true);
-        Iterable<FileSystemEntity> validChildren = children.where(
+        final Iterable<FileSystemEntity> validChildren = children.where(
           (FileSystemEntity e) {
-            return (
+            return
                 // Is a file, not a directory
                 e is File &&
                     // Is not a package dependency file
-                    !(Uri.parse(e.path).pathSegments.contains('packages')) &&
+                    !Uri.parse(e.path).pathSegments.contains('packages') &&
                     // Is a valid test file (ends with `_test.dart`)
-                    e.path.endsWith(_testFilePattern));
+                    e.path.endsWith(_testFilePattern);
           },
         );
         testFiles.addAll(validChildren.map((FileSystemEntity e) => e.path));
@@ -104,15 +104,15 @@ main(List<String> args) async {
     },
   );
 
-  List<Coverage> coverages = [];
+  final List<Coverage> coverages = [];
   for (int i = 0; i < testFiles.length; i++) {
-    Test test = await Test.parse(testFiles[i]);
-    Coverage coverage = Coverage(test);
+    final Test test = await Test.parse(testFiles[i]);
+    final Coverage coverage = Coverage(test);
     await coverage.collect();
     coverages.add(coverage);
   }
 
-  Coverage coverage = await Coverage.merge(coverages);
+  final Coverage coverage = await Coverage.merge(coverages);
   coverages.forEach((cov) => cov.cleanUp());
   if (!await coverage.format()) {
     exit(1);
